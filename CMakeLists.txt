@@ -19,7 +19,8 @@ option(RUN_REGRESS_TEST "Run regression tests on build" OFF)
 option(RUN_SYSTEM_TEST "Run system tests on build" OFF)
 option(RUN_MEMORY_TEST "Run cxxtest testing with ASAN ON" ON)
 option(RUN_PYTHON_TEST "Run Python API tests if building with Python" OFF)
-option(ENABLE_GUROBI "Enable use the Gurobi optimizer" OFF)
+option(ENABLE_GUROBI "Enable use the Gurobi optimizer" ON)
+option(ENABLE_SYMPHONY "Enable use the Symphony solver" ON)
 option(ENABLE_OPENBLAS "Do symbolic bound tighting using blas" ON) # Not available on Windows
 option(CODE_COVERAGE "Add code coverage" OFF)  # Available only in debug mode
 
@@ -158,7 +159,7 @@ if (${ENABLE_GUROBI})
   add_compile_definitions(ENABLE_GUROBI)
 
   set(GUROBI_LIB1 "gurobi_c++")
-  set(GUROBI_LIB2 "gurobi110")
+  set(GUROBI_LIB2 "gurobi1300")
 
   add_library(${GUROBI_LIB1} SHARED IMPORTED)
   set_target_properties(${GUROBI_LIB1} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi_c++.a)
@@ -169,13 +170,24 @@ if (${ENABLE_GUROBI})
 
   # MACOSx uses .dylib instead of .so for its Gurobi downloads.
   if (APPLE)
-    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi110.dylib)
+    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi130.dylib)
   else()
-    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi110.so)
+    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi130.so)
   endif ()
 
   list(APPEND LIBS ${GUROBI_LIB2})
   target_include_directories(${GUROBI_LIB2} INTERFACE ${GUROBI_DIR}/include/)
+endif()
+
+##############
+## Symphony ##
+##############
+if (${ENABLE_SYMPHONY})
+  message(STATUS "Using Symphony for warmstarting")
+  include_directories($ENV{HOME}/coinbrew/dist/include)
+  link_directories($ENV{HOME}/coinbrew/dist/lib)
+  add_compile_definitions(ENABLE_SYMPHONY)
+  list(APPEND EXTRA_LIBS Sym)
 endif()
 
 ##############

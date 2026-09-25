@@ -219,8 +219,20 @@ void Marabou::solveQuery()
 
     struct timespec start = TimeUtils::sampleMicro();
     unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
+    if ( Options::get()->getBool( Options::DUMP_MPS ) )
+    { 
+        if ( _engine->processInputQuery( _inputQuery ) ){
+        String mpsPathStr = Options::get()->getString( Options::DUMP_MPS_PATH );
+        std::string mpsPath = mpsPathStr.ascii();    // or toStdString(), depending on your String API
+
+        _engine->requestDumpMps( mpsPath );
+        _engine->solve( timeoutInSeconds );}
+
+    }
     if ( _engine->processInputQuery( _inputQuery ) )
-    {
+    {    
+
+        fflush( stdout );
         _engine->solve( timeoutInSeconds );
         if ( _engine->shouldProduceProofs() && _engine->getExitCode() == Engine::UNSAT )
             _engine->certifyUNSATCertificate();

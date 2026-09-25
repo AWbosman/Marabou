@@ -21,6 +21,7 @@
 #include "GurobiWrapper.h"
 #include "TimeUtils.h"
 
+
 MILPEncoder::MILPEncoder( const ITableau &tableau )
     : _tableau( tableau )
     , _statistics( NULL )
