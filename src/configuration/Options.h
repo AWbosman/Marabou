@@ -59,6 +59,7 @@ public:
 
         // Solve the input query with a MILP solver
         SOLVE_WITH_MILP,
+        DUMP_MPS,         // new: boolean switch for dumping the MPS file
 
         // Whether to call a LP tightening after a case split
         PERFORM_LP_TIGHTENING_AFTER_SPLIT,
@@ -148,6 +149,7 @@ public:
         EXPORT_ASSIGNMENT_FILE_PATH,
         IMPORT_ASSIGNMENT_FILE_PATH,
         SOFTMAX_BOUND_TYPE,
+        DUMP_MPS_PATH,    //the path at which to dump
 
         // The strategy used for soi minimization
         SOI_SEARCH_STRATEGY,

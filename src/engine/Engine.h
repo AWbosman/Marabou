@@ -73,6 +73,7 @@ class Engine
     , public SignalHandler::Signalable
 {
 public:
+
     enum {
         MICROSECONDS_TO_SECONDS = 1000000,
     };
@@ -80,6 +81,7 @@ public:
     Engine();
     ~Engine();
 
+   
     /*
       Attempt to find a feasible solution for the input within a time limit
       (a timeout of 0 means no time limit). Returns true if found, false if infeasible.
@@ -140,6 +142,9 @@ public:
       A request from the user to terminate
     */
     void quitSignal() override;
+
+    void requestDumpMps( const std::string &path );
+
 
     const Statistics *getStatistics() const;
 
@@ -314,6 +319,8 @@ public:
     const List<PiecewiseLinearConstraint *> *getPiecewiseLinearConstraints() const override;
 
 private:
+    bool _dumpMpsEnabled = false;
+    String _dumpMpsPath;
     enum BasisRestorationRequired {
         RESTORATION_NOT_NEEDED = 0,
         STRONG_RESTORATION_NEEDED = 1,

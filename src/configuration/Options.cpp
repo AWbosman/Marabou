@@ -43,6 +43,7 @@ void Options::initializeDefaultValues()
     /*
       Bool options
     */
+    _boolOptions[DUMP_MPS] = false;
     _boolOptions[DNC_MODE] = false;
     _boolOptions[PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS] = false;
     _boolOptions[RESTORE_TREE_STATES] = false;
@@ -85,6 +86,7 @@ void Options::initializeDefaultValues()
     /*
       String options
     */
+    _stringOptions[DUMP_MPS_PATH] = "marabou_temp_model.mps";
     _stringOptions[INPUT_FILE_PATH] = "";
     _stringOptions[PROPERTY_FILE_PATH] = "";
     _stringOptions[INPUT_QUERY_FILE_PATH] = "";

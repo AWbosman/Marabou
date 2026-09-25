@@ -80,7 +80,19 @@ void OptionParser::initialize()
           boost::program_options::bool_switch( &( *_boolOptions )[Options::SOLVE_WITH_MILP] )
               ->default_value( ( *_boolOptions )[Options::SOLVE_WITH_MILP] ),
           "Solve the input query with a MILP encoding in Gruobi." )
+          ( "dump-mps",
+            boost::program_options::bool_switch( &( *_boolOptions )[Options::DUMP_MPS] )
+                ->default_value( ( *_boolOptions )[Options::DUMP_MPS] ),
+            "If set, Marabou will dump the internal Gurobi model to an MPS file and exit." )
+          ( "dump-mps-path",
+            boost::program_options::value<std::string>(
+                &( ( *_stringOptions )[Options::DUMP_MPS_PATH] ) )
+                ->default_value( ( *_stringOptions )[Options::DUMP_MPS_PATH] ),
+            "Path to write the MPS file (used with --dump-mps)." )
 #endif
+
+
+
         ;
 
     // Less common options

@@ -186,8 +186,15 @@ void Engine::exportQueryWithError( String errorMessage )
             ipqFileName.ascii() );
 }
 
-bool Engine::solve( double timeoutInSeconds )
+void Engine::requestDumpMps( const std::string &path )
 {
+    _dumpMpsEnabled = true;
+    _dumpMpsPath = path;
+}
+
+bool Engine::solve( double timeoutInSeconds )
+{   
+
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
 
@@ -196,16 +203,19 @@ bool Engine::solve( double timeoutInSeconds )
         plConstraint->registerBoundManager( &_boundManager );
     for ( auto &nlConstraint : _nlConstraints )
         nlConstraint->registerBoundManager( &_boundManager );
-
+   
     // Before encoding, make sure all valid constraints are applied.
-    applyAllValidConstraintCaseSplits();
+    applyAllValidConstraintCaseSplits(); 
 
-    if ( _solveWithMILP )
+    if ( _solveWithMILP ){
         return solveWithMILPEncoding( timeoutInSeconds );
-
+    }
+  
     updateDirections();
-    if ( _lpSolverType == LPSolverType::NATIVE )
+  
+    if ( _lpSolverType == LPSolverType::NATIVE ){
         storeInitialEngineState();
+    }
     else if ( _lpSolverType == LPSolverType::GUROBI )
     {
         ENGINE_LOG( "Encoding convex relaxation into Gurobi..." );
@@ -215,7 +225,38 @@ bool Engine::solve( double timeoutInSeconds )
         _milpEncoder->setStatistics( &_statistics );
         _milpEncoder->encodeQuery( *_gurobi, *_preprocessedQuery, true );
         ENGINE_LOG( "Encoding convex relaxation into Gurobi - done" );
+
+  
+        // If a dump was requested by main(), write the MPS and exit early.
+        if ( _dumpMpsEnabled )
+        { 
+    
+            try
+            {
+                if ( !_gurobi )
+                {
+                    fprintf( stderr, "Engine: Gurobi wrapper not initialized — cannot dump MPS\n" );
+                    fflush( stdout );
+                }
+                else
+                {
+                    _gurobi->makeMPS( _dumpMpsPath );
+                    printf( "Engine: Wrote MPSs. Exiting (dump-only mode).\n");
+                    fflush( stdout );
+                }
+            }
+            catch ( const std::exception &e )
+            {
+                fprintf( stderr, "Engine: Failed to write MPS: %s\n", e.what() );
+            }
+            // Return false to exit solve early. Set a sensible exit code.
+            _exitCode = Engine::ERROR; // or choose another exit code as desired
+            return false;
+        }
+
     }
+
+
 
     mainLoopStatistics();
     if ( _verbosity > 0 )
@@ -1408,7 +1449,7 @@ bool Engine::processInputQuery( const IQuery &inputQuery, bool preprocess )
 {
     ENGINE_LOG( "processInputQuery starting\n" );
     struct timespec start = TimeUtils::sampleMicro();
-
+    //todo: somethign weird happens here after and it does not go back to solving?
     try
     {
         invokePreprocessor( inputQuery, preprocess );
@@ -2998,7 +3039,7 @@ void Engine::storeSearchTreeState( SearchTreeState &searchTreeState )
 }
 
 bool Engine::solveWithMILPEncoding( double timeoutInSeconds )
-{
+{   
     try
     {
         if ( _lpSolverType == LPSolverType::NATIVE && _tableau->basisMatrixAvailable() )
@@ -3014,10 +3055,13 @@ bool Engine::solveWithMILPEncoding( double timeoutInSeconds )
         }
     }
     catch ( const InfeasibleQueryException & )
-    {
+    {   
+        printf( "DO WE GET INFEASIBLE?.\n");
+        fflush( stdout );
         _exitCode = Engine::UNSAT;
         return false;
     }
+    
 
     ENGINE_LOG( "Encoding the input query with Gurobi...\n" );
     _gurobi = std::unique_ptr<GurobiWrapper>( new GurobiWrapper() );
@@ -3025,6 +3069,31 @@ bool Engine::solveWithMILPEncoding( double timeoutInSeconds )
     _milpEncoder = std::unique_ptr<MILPEncoder>( new MILPEncoder( *_tableau ) );
     _milpEncoder->encodeQuery( *_gurobi, *_preprocessedQuery );
     ENGINE_LOG( "Query encoded in Gurobi...\n" );
+    printf( "DO WE GET HERE?.\n");
+    fflush( stdout );
+    if ( _dumpMpsEnabled )
+        { 
+            try
+            {
+                if ( !_gurobi )
+                {
+                    fprintf( stderr, "Engine: Gurobi wrapper not initialized — cannot dump MPS\n" );
+                }
+                else
+                {
+                    _gurobi->makeMPS( _dumpMpsPath );
+                    printf( "Engine: Wrote MPSs. Exiting (dump-only mode).\n");
+                    fflush( stdout );
+                }
+            }
+            catch ( const std::exception &e )
+            {
+                fprintf( stderr, "Engine: Failed to write MPS: %s\n", e.what() );
+            }
+            // Return false to exit solve early. Set a sensible exit code.
+            _exitCode = Engine::ERROR; 
+            return false;
+        }
 
     double timeoutForGurobi = ( timeoutInSeconds == 0 ? FloatUtils::infinity() : timeoutInSeconds );
     ENGINE_LOG( Stringf( "Gurobi timeout set to %f\n", timeoutForGurobi ).ascii() )
